@@ -1,10 +1,11 @@
 services:
+  #Contenedor principal de Neo4j
   neo4j:
     image: neo4j:5.13.0
     container_name: neo4j-db
     ports:
-      - "7474:7474"
-      - "7687:7687"
+      - "7474:7474" #Puerto para el acceso HTTP
+      - "7687:7687" #Puerto para el acceso Bolt
     env_file:
       - .env
     environment:
@@ -12,7 +13,22 @@ services:
     volumes:
       - neo4j_data:/data
       - neo4j_logs:/logs
-      - ./init.cypher:/docker-entrypoint-initdb.d/init.cypher:ro # init script (opcional)
+  
+  #Contenedor auxiliar para inicializar la base de datos con un script Cypher
+  init-neo:
+    image: neo4j:5.13.0
+    depends_on:
+      - neo4j
+    env_file:
+      - .env
+    volumes:
+      - ./init.cypher:/scripts/init.cypher:ro
+    #Ejecución del script de inicialización
+    command: >
+      bash -c "until cypher-shell -a bolt://neo4j:7687 -u ${DB_USER} -p ${DB_PASS} 'RETURN 1;' >/dev/null 2>&1; do sleep 1; done;
+               cypher-shell -a bolt://neo4j:7687 -u ${DB_USER} -p ${DB_PASS} -f /scripts/init.cypher || true"
+    restart: "no"
+
 volumes:
   neo4j_data:
   neo4j_logs:

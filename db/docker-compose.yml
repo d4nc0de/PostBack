@@ -1,0 +1,18 @@
+services:
+  neo4j:
+    image: neo4j:5.13.0
+    container_name: neo4j-db
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    env_file:
+      - .env
+    environment:
+      - NEO4J_AUTH=${DB_USER}/${DB_PASS}
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+      - ./init.cypher:/docker-entrypoint-initdb.d/init.cypher:ro # init script (opcional)
+volumes:
+  neo4j_data:
+  neo4j_logs:

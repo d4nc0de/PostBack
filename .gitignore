@@ -16,3 +16,6 @@ db/logs/
 /obj/Debug/net5.0/refint/HR.dll
 /obj/Debug/net5.0/staticwebassets/HR.StaticWebAssets.Pack.cache
 /bin/Debug/net5.0/HR.StaticWebAssets.xml
+*.json
+*.props
+*.cache

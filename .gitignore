@@ -5,3 +5,17 @@ db/logs/
 /.vs
 /bin/Debug/net5.0
 /obj/Debug/net5.0
+/obj/Debug/net5.0/HR.AssemblyInfo.cs
+/obj/Debug/net5.0/HR.AssemblyInfoInputs.cache
+/bin/Debug/net5.0/HR.deps.json
+/bin/Debug/net5.0/HR.dll
+/bin/Debug/net5.0/HR.exe
+/bin/Debug/net5.0/HR.runtimeconfig.dev.json
+/bin/Debug/net5.0/HR.pdb
+/obj/Debug/net5.0/ref/HR.dll
+/obj/Debug/net5.0/refint/HR.dll
+/obj/Debug/net5.0/staticwebassets/HR.StaticWebAssets.Pack.cache
+/bin/Debug/net5.0/HR.StaticWebAssets.xml
+*.json
+*.props
+*.cache

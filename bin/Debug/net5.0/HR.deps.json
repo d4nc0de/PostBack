@@ -527,11 +527,7 @@
           "System.Threading.Tasks": "4.3.0"
         }
       },
-      "System.ComponentModel.Annotations/5.0.0": {
-        "compile": {
-          "ref/netstandard2.1/System.ComponentModel.Annotations.dll": {}
-        }
-      },
+      "System.ComponentModel.Annotations/5.0.0": {},
       "System.Diagnostics.Debug/4.3.0": {
         "dependencies": {
           "Microsoft.NETCore.Platforms": "1.1.0",

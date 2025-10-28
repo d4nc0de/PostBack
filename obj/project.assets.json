@@ -4753,31 +4753,24 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\Dolivero\\.nuget\\packages\\": {},
-    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
+    "C:\\Users\\Lucia Montoya\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Desarrollo Uni\\PostBack\\HR.csproj",
+      "projectUniqueName": "C:\\Users\\Lucia Montoya\\OneDrive - Universidad del Norte\\Documentos\\GitHub\\PostBack\\HR.csproj",
       "projectName": "HR",
-      "projectPath": "C:\\Desarrollo Uni\\PostBack\\HR.csproj",
-      "packagesPath": "C:\\Users\\Dolivero\\.nuget\\packages\\",
-      "outputPath": "C:\\Desarrollo Uni\\PostBack\\obj\\",
+      "projectPath": "C:\\Users\\Lucia Montoya\\OneDrive - Universidad del Norte\\Documentos\\GitHub\\PostBack\\HR.csproj",
+      "packagesPath": "C:\\Users\\Lucia Montoya\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\Lucia Montoya\\OneDrive - Universidad del Norte\\Documentos\\GitHub\\PostBack\\obj\\",
       "projectStyle": "PackageReference",
-      "fallbackFolders": [
-        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-      ],
       "configFilePaths": [
-        "C:\\Users\\Dolivero\\AppData\\Roaming\\NuGet\\NuGet.Config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        "C:\\Users\\Lucia Montoya\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net5.0"
       ],
       "sources": {
-        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
@@ -4848,7 +4841,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304\\RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.306\\RuntimeIdentifierGraph.json"
       }
     }
   }

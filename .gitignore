@@ -5,3 +5,5 @@ db/logs/
 /.vs
 /bin/Debug/net5.0
 /obj/Debug/net5.0
+/obj/Debug/net5.0/HR.AssemblyInfo.cs
+/obj/Debug/net5.0/HR.AssemblyInfoInputs.cache

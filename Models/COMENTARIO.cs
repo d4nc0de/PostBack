@@ -2,7 +2,7 @@ using System;
 
 namespace HR.Models
 {
-    public class Comentario
+    public class COMENTARIO
     {
         public int idp { get; set; }                
         public int consec { get; set; }            

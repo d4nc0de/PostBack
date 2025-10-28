@@ -9,11 +9,11 @@ namespace HR.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class ComentarioController : ControllerBase
+    public class CommentController : ControllerBase
     {
         private readonly IGraphClient _client;
 
-        public ComentarioController(IGraphClient client)
+        public CommentController(IGraphClient client)
         {
             _client = client;
         }
@@ -48,10 +48,10 @@ namespace HR.Controllers
         public async Task<IActionResult> GetByPostAndConsec(int idp, int consec)
         {
             var comentario = await _client.Cypher
-                                          .Match("(c:Comentario)")
-                                          .Where((Comentario c) => c.idp == idp && c.consec == consec)
-                                          .Return(c => c.As<Comentario>())
-                                          .ResultsAsync;
+                                        .Match("(c:Comentario)")
+                                        .Where((Comentario c) => c.idp == idp && c.consec == consec)
+                                        .Return(c => c.As<Comentario>())
+                                        .ResultsAsync;
 
             return Ok(comentario.LastOrDefault());
         }
@@ -61,9 +61,9 @@ namespace HR.Controllers
         public async Task<IActionResult> Create([FromBody] Comentario comentario)
         {
             await _client.Cypher
-                         .Create("(c:Comentario $comentario)")
-                         .WithParam("comentario", comentario)
-                         .ExecuteWithoutResultsAsync();
+                        .Create("(c:Comentario $comentario)")
+                        .WithParam("comentario", comentario)
+                        .ExecuteWithoutResultsAsync();
 
             return Ok("Comentario creado correctamente.");
         }
@@ -73,11 +73,11 @@ namespace HR.Controllers
         public async Task<IActionResult> Update(int idp, int consec, [FromBody] Comentario comentario)
         {
             await _client.Cypher
-                         .Match("(c:Comentario)")
-                         .Where((Comentario c) => c.idp == idp && c.consec == consec)
-                         .Set("c = $comentario")
-                         .WithParam("comentario", comentario)
-                         .ExecuteWithoutResultsAsync();
+                        .Match("(c:Comentario)")
+                        .Where((Comentario c) => c.idp == idp && c.consec == consec)
+                        .Set("c = $comentario")
+                        .WithParam("comentario", comentario)
+                        .ExecuteWithoutResultsAsync();
 
             return Ok("Comentario actualizado correctamente.");
         }

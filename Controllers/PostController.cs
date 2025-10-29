@@ -5,7 +5,12 @@ using Neo4jClient;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
+using HR.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Neo4jClient;
 
 namespace HR.Controllers
 {
@@ -38,7 +43,7 @@ namespace HR.Controllers
                 var user = (await _client.Cypher
                     .Match("(u:USUARIO {idu:$idu})")
                     .WithParam("idu", post.idu)
-                    .Return(u => u.As<USUARIO>())
+                                    .Return(u => u.As<USUARIO>())
                     .ResultsAsync).FirstOrDefault();
 
                 var comentarios = await _client.Cypher
@@ -81,7 +86,7 @@ namespace HR.Controllers
             var Posts = await _client.Cypher
                                             .Match("(c:POST)")
                                             .Return(c => c.As<Post>())
-                                            .ResultsAsync;
+                                    .ResultsAsync;
 
             return Ok(Posts);
         }
@@ -105,9 +110,9 @@ namespace HR.Controllers
             var user = (await _client.Cypher
                 .Match("(u:USUARIO {idu:$idu})")
                 .WithParam("idu", post.idu)
-                .Return(u => u.As<USUARIO>())
-                .ResultsAsync)
-                .FirstOrDefault();
+                                    .Return(u => u.As<USUARIO>())
+                                    .ResultsAsync)
+                        .FirstOrDefault();
 
             // 3️⃣ Buscar comentarios asociados
             var comentarios = await _client.Cypher
@@ -145,6 +150,16 @@ namespace HR.Controllers
             return Ok(dto);
         }
 
+        //Crear un nuevo usuario
+        [HttpPost]
+        public async Task<IActionResult> Create([FromBody]USUARIO user){
+            var exists = (await _client.Cypher
+                                      .Match("(u:USUARIO)")
+                                      .Where((USUARIO u) => u.idu == user.idu)
+                                      .Return(u => u.As<USUARIO>())
+                                      .ResultsAsync)
+                         .Any();
+            if (exists) return Conflict($"Usuario con idu={user.idu} ya existe.");
 
         // 🔹 Obtener comentario 
         //[HttpGet("post/{idp}/COMENTARIO/{consec}")]
@@ -166,7 +181,7 @@ namespace HR.Controllers
             await _client.Cypher
                          .Create("(c:POST $POST)")
                          .WithParam("POST", post)
-                         .ExecuteWithoutResultsAsync();
+                            .ExecuteWithoutResultsAsync();
 
             return Ok("Post creado correctamente.");
         }
@@ -180,7 +195,7 @@ namespace HR.Controllers
                          .Where((Post c) => c.idp == idp)
                          .Set("c = POST")
                          .WithParam("POST", post)
-                         .ExecuteWithoutResultsAsync();
+                        .ExecuteWithoutResultsAsync();
 
             return Ok("Post actualizado correctamente.");
         }
@@ -193,9 +208,10 @@ namespace HR.Controllers
                          .Match("(c:POST)")
                          .Where((Post c) => c.idp == idp)
                          .Delete("POST")
-                         .ExecuteWithoutResultsAsync();
+                            .ExecuteWithoutResultsAsync();
 
             return Ok("Post eliminado correctamente.");
         }
+        
     }
 }

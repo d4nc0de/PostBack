@@ -9,11 +9,11 @@ namespace HR.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class ComentarioController : ControllerBase
+    public class CommentController : ControllerBase
     {
         private readonly IGraphClient _client;
 
-        public ComentarioController(IGraphClient client)
+        public CommentController(IGraphClient client)
         {
             _client = client;
         }

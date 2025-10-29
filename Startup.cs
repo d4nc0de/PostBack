@@ -29,12 +29,27 @@ namespace HR
         {
 
             services.AddControllers();
+
+            services.AddCors(options =>
+            {
+                options.AddPolicy("AngularDev", builder =>
+                {
+                    builder
+                        .WithOrigins("http://localhost:4200") // tu front
+                        .AllowAnyMethod()
+                        .AllowAnyHeader()
+                        // Si vas a usar cookies/autenticación por navegador, descomenta:
+                        // .AllowCredentials()
+                        ;
+                });
+            });
+
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "HR", Version = "v1" });
             });
 
-            var client = new BoltGraphClient(new Uri("bolt://localhost:7687"),"neo4j","root");
+            var client = new BoltGraphClient(new Uri("bolt://localhost:7687"),"neo4j", "password123");
             client.ConnectAsync();
             services.AddSingleton<IGraphClient>(client);
         }
@@ -52,6 +67,9 @@ namespace HR
             app.UseHttpsRedirection();
 
             app.UseRouting();
+
+            // ?? CORS debe ir entre UseRouting y UseAuthorization
+            app.UseCors("AngularDev");
 
             app.UseAuthorization();
 

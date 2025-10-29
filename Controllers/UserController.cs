@@ -46,6 +46,40 @@ namespace HR.Controllers
             return Ok(user);
         }
 
+
+        [HttpGet("Login")]
+        public async Task<IActionResult> Login(string mail, string password)
+        {
+            var user = (await _client.Cypher
+                                    .Match("(u:USUARIO)")
+                                    .Where((USUARIO u) => u.mail == mail && u.password == password)
+                                    .Return(u => u.As<USUARIO>())
+                                    .ResultsAsync)
+                        .FirstOrDefault();
+
+            if (user == null) return NotFound();
+            return Ok(user);
+        }
+
+        [HttpPost("Register")]
+        public async Task<IActionResult> Register([FromBody] USUARIO user)
+        {
+            var exists = (await _client.Cypher
+                                      .Match("(u:USUARIO)")
+                                      .Where((USUARIO u) => u.idu == user.idu)
+                                      .Return(u => u.As<USUARIO>())
+                                      .ResultsAsync)
+                         .Any();
+            if (exists) return Conflict($"Usuario con idu={user.idu} ya existe.");
+
+            await _client.Cypher
+                            .Create("(u:USUARIO $user)")
+                            .WithParam("user", user)
+                            .ExecuteWithoutResultsAsync();
+
+            return Ok();
+        }
+
         //Crear un nuevo usuario
         [HttpPost]
         public async Task<IActionResult> Create([FromBody]USUARIO user){

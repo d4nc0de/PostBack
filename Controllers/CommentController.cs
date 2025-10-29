@@ -19,11 +19,11 @@ namespace HR.Controllers
         }
 
         // 🔹 Obtener los comentarios
-        [HttpGet]
+        [HttpGet("ObtenerPosts")]
         public async Task<IActionResult> Get()
         {
             var comentarios = await _client.Cypher
-                                            .Match("(c:Comentario)")
+                                            .Match("(c:COMENTARIO)")
                                             .Return(c => c.As<Comentario>())
                                             .ResultsAsync;
 
@@ -35,7 +35,7 @@ namespace HR.Controllers
         public async Task<IActionResult> GetByPost(int idp)
         {
             var comentarios = await _client.Cypher
-                                            .Match("(c:Comentario)")
+                                            .Match("(c:COMENTARIO)")
                                             .Where((Comentario c) => c.idp == idp)
                                             .Return(c => c.As<Comentario>())
                                             .ResultsAsync;
@@ -43,12 +43,24 @@ namespace HR.Controllers
             return Ok(comentarios);
         }
 
+        [HttpGet("Comentario/{idp}")]
+        public async Task<IActionResult> GetComentsAutByPost(int idp)
+        {
+            var comentarios = await _client.Cypher
+                                            .Match("(c:COMENTARIO)")
+                                            .Where((Comentario c) => c.idp == idp && c.iduAutorizador != null)
+                                            .Return(c => c.As<Comentario>())
+                                            .ResultsAsync;
+
+            return Ok(comentarios);
+        }
+
         // 🔹 Obtener comentario 
-        [HttpGet("post/{idp}/comentario/{consec}")]
+        [HttpGet("post/{idp}/COMENTARIO/{consec}")]
         public async Task<IActionResult> GetByPostAndConsec(int idp, int consec)
         {
             var comentario = await _client.Cypher
-                                          .Match("(c:Comentario)")
+                                          .Match("(c:COMENTARIO)")
                                           .Where((Comentario c) => c.idp == idp && c.consec == consec)
                                           .Return(c => c.As<Comentario>())
                                           .ResultsAsync;
@@ -57,37 +69,37 @@ namespace HR.Controllers
         }
 
         // 🔹 Crear comentario
-        [HttpPost]
+        [HttpPost("Crear")]
         public async Task<IActionResult> Create([FromBody] Comentario comentario)
         {
             await _client.Cypher
-                         .Create("(c:Comentario $comentario)")
-                         .WithParam("comentario", comentario)
+                         .Create("(c:COMENTARIO $COMENTARIO)")
+                         .WithParam("COMENTARIO", comentario)
                          .ExecuteWithoutResultsAsync();
 
             return Ok("Comentario creado correctamente.");
         }
 
         // 🔹 Actualizar comentario 
-        [HttpPut("post/{idp}/comentario/{consec}")]
+        [HttpPut("post/{idp}/COMENTARIO/{consec}")]
         public async Task<IActionResult> Update(int idp, int consec, [FromBody] Comentario comentario)
         {
             await _client.Cypher
-                         .Match("(c:Comentario)")
+                         .Match("(c:COMENTARIO)")
                          .Where((Comentario c) => c.idp == idp && c.consec == consec)
-                         .Set("c = $comentario")
-                         .WithParam("comentario", comentario)
+                         .Set("c = COMENTARIO")
+                         .WithParam("COMENTARIO", comentario)
                          .ExecuteWithoutResultsAsync();
 
             return Ok("Comentario actualizado correctamente.");
         }
 
         // 🔹 Eliminar comentario
-        [HttpDelete("post/{idp}/comentario/{consec}")]
+        [HttpDelete("post/{idp}/COMENTARIO/{consec}")]
         public async Task<IActionResult> Delete(int idp, int consec)
         {
             await _client.Cypher
-                         .Match("(c:Comentario)")
+                         .Match("(c:COMENTARIO)")
                          .Where((Comentario c) => c.idp == idp && c.consec == consec)
                          .Delete("c")
                          .ExecuteWithoutResultsAsync();

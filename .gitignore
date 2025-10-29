@@ -19,3 +19,8 @@ db/logs/
 *.json
 *.props
 *.cache
+/bin/Debug/net5.0/Neo4j.Driver.dll
+/bin/Debug/net5.0/Neo4jClient.dll
+/bin/Debug/net5.0/Newtonsoft.Json.dll
+/obj/HR.csproj.nuget.g.targets
+/HR.csproj

@@ -5,9 +5,9 @@ CREATE CONSTRAINT IF NOT EXISTS FOR (c:COMENTARIO) REQUIRE c.consec IS UNIQUE;
 
 // Crear índices adicionales para mejorar el rendimiento de las consultas
 //equivalentes a PK
-CREATE INDEX IF NOT EXISTS FOR (u:USUARIO) ON (u.idu);
-CREATE INDEX IF NOT EXISTS FOR (p:POST) ON (p.idp);
-CREATE INDEX IF NOT EXISTS FOR (c:COMENTARIO) ON (c.consec); 
+//CREATE INDEX IF NOT EXISTS FOR (u:USUARIO) ON (u.idu);
+//CREATE INDEX IF NOT EXISTS FOR (p:POST) ON (p.idp);
+//CREATE INDEX IF NOT EXISTS FOR (c:COMENTARIO) ON (c.consec); 
 
 //Inicialiar nodos de prueba
 CREATE (u:USUARIO {idu: 'user1', nombre: 'Alice'});
@@ -41,39 +41,57 @@ CREATE (c:COMENTARIO {consec:11, fechorCom:datetime(), likeNotLike:TRUE, conteni
 CREATE (c:COMENTARIO {consec:12, fechorCom:datetime(), likeNotLike:TRUE, contenidoCom:'Thanks for the insights.'});
 
 // Crear relaciones entre nodos de prueba
-MATCH (ux:USUARIO {idu:'user1'}), (px:POST {idp:'post1'}) CREATE (ux)-[:PUBLICA]->(px);
-MATCH (ux:USUARIO {idu:'user2'}), (px:POST {idp:'post2'}) CREATE (ux)-[:PUBLICA]->(px);
-MATCH (ux:USUARIO {idu:'user3'}), (px:POST {idp:'post3'}) CREATE (ux)-[:PUBLICA]->(px);
-MATCH (ux:USUARIO {idu:'user4'}), (px:POST {idp:'post4'}) CREATE (ux)-[:PUBLICA]->(px);
-MATCH (ux:USUARIO {idu:'user5'}), (px:POST {idp:'post5'}) CREATE (ux)-[:PUBLICA]->(px);
-MATCH (ux:USUARIO {idu:'user1'}), (px:POST {idp:'post6'}) CREATE (ux)-[:PUBLICA]->(px);
-MATCH (ux:USUARIO {idu:'user2'}), (px:POST {idp:'post7'}) CREATE (ux)-[:PUBLICA]->(px);
-MATCH (ux:USUARIO {idu:'user3'}), (px:POST {idp:'post8'}) CREATE (ux)-[:PUBLICA]->(px);
-MATCH (ux:USUARIO {idu:'user4'}), (px:POST {idp:'post9'}) CREATE (ux)-[:PUBLICA]->(px);
-MATCH (ux:USUARIO {idu:'user5'}), (px:POST {idp:'post10'}) CREATE (ux)-[:PUBLICA]->(px);
+// USUARIO -[PUBLICA]-> POST
+UNWIND [
+    {idu: 'user1', idp: 'post1'},
+    {idu: 'user2', idp: 'post2'},
+    {idu: 'user3', idp: 'post3'},
+    {idu: 'user4', idp: 'post4'},
+    {idu: 'user5', idp: 'post5'},
+    {idu: 'user1', idp: 'post6'},
+    {idu: 'user2', idp: 'post7'},
+    {idu: 'user3', idp: 'post8'},
+    {idu: 'user4', idp: 'post9'},
+    {idu: 'user5', idp: 'post10'}
+] AS rel_publica
+MATCH (ux:USUARIO {idu: rel_publica.idu})
+MATCH (px:POST {idp: rel_publica.idp})
+CREATE (ux)-[:PUBLICA]->(px);
 
-MATCH (ux:USUARIO {idu:'user2'}), (cx:COMENTARIO {consec:1}) CREATE (ux)-[:HACE]->(cx);
-MATCH (ux:USUARIO {idu:'user3'}), (cx:COMENTARIO {consec:2}) CREATE (ux)-[:HACE]->(cx);
-MATCH (ux:USUARIO {idu:'user4'}), (cx:COMENTARIO {consec:3}) CREATE (ux)-[:HACE]->(cx);
-MATCH (ux:USUARIO {idu:'user5'}), (cx:COMENTARIO {consec:4}) CREATE (ux)-[:HACE]->(cx);
-MATCH (ux:USUARIO {idu:'user1'}), (cx:COMENTARIO {consec:5}) CREATE (ux)-[:HACE]->(cx);
-MATCH (ux:USUARIO {idu:'user2'}), (cx:COMENTARIO {consec:6}) CREATE (ux)-[:HACE]->(cx);
-MATCH (ux:USUARIO {idu:'user3'}), (cx:COMENTARIO {consec:7}) CREATE (ux)-[:HACE]->(cx);
-MATCH (ux:USUARIO {idu:'user4'}), (cx:COMENTARIO {consec:8}) CREATE (ux)-[:HACE]->(cx);
-MATCH (ux:USUARIO {idu:'user5'}), (cx:COMENTARIO {consec:9}) CREATE (ux)-[:HACE]->(cx);
-MATCH (ux:USUARIO {idu:'user1'}), (cx:COMENTARIO {consec:10}) CREATE (ux)-[:HACE]->(cx);
-MATCH (ux:USUARIO {idu:'user2'}), (cx:COMENTARIO {consec:11}) CREATE (ux)-[:HACE]->(cx);
-MATCH (ux:USUARIO {idu:'user3'}), (cx:COMENTARIO {consec:12}) CREATE (ux)-[:HACE]->(cx);
+// USUARIO -[HACE]-> COMENTARIO
+UNWIND [
+    {idu: 'user2', consec: 1},
+    {idu: 'user3', consec: 2},
+    {idu: 'user4', consec: 3},
+    {idu: 'user5', consec: 4},
+    {idu: 'user1', consec: 5},
+    {idu: 'user2', consec: 6},
+    {idu: 'user3', consec: 7},
+    {idu: 'user4', consec: 8},
+    {idu: 'user5', consec: 9},
+    {idu: 'user1', consec: 10},
+    {idu: 'user2', consec: 11},
+    {idu: 'user3', consec: 12}
+] AS rel_hace
+MATCH (ux:USUARIO {idu: rel_hace.idu})
+MATCH (cx:COMENTARIO {consec: rel_hace.consec})
+CREATE (ux)-[:HACE]->(cx);
 
-MATCH (px:POST {idp:'post1'}), (cx:COMENTARIO {consec:1}) CREATE (px)-[:TIENE]->(cx);
-MATCH (px:POST {idp:'post1'}), (cx:COMENTARIO {consec:2}) CREATE (px)-[:TIENE]->(cx);
-MATCH (px:POST {idp:'post2'}), (cx:COMENTARIO {consec:3}) CREATE (px)-[:TIENE]->(cx);
-MATCH (px:POST {idp:'post3'}), (cx:COMENTARIO {consec:4}) CREATE (px)-[:TIENE]->(cx);
-MATCH (px:POST {idp:'post4'}), (cx:COMENTARIO {consec:5}) CREATE (px)-[:TIENE]->(cx);
-MATCH (px:POST {idp:'post5'}), (cx:COMENTARIO {consec:6}) CREATE (px)-[:TIENE]->(cx);
-MATCH (px:POST {idp:'post6'}), (cx:COMENTARIO {consec:7}) CREATE (px)-[:TIENE]->(cx);
-MATCH (px:POST {idp:'post7'}), (cx:COMENTARIO {consec:8}) CREATE (px)-[:TIENE]->(cx);
-MATCH (px:POST {idp:'post8'}), (cx:COMENTARIO {consec:9}) CREATE (px)-[:TIENE]->(cx);
-MATCH (px:POST {idp:'post9'}), (cx:COMENTARIO {consec:10}) CREATE (px)-[:TIENE]->(cx);
-MATCH (px:POST {idp:'post10'}), (cx:COMENTARIO {consec:11}) CREATE (px)-[:TIENE]->(cx);
-MATCH (px:POST {idp:'post10'}), (cx:COMENTARIO {consec:12}) CREATE (px)-[:TIENE]->(cx);
+// POST -[TIENE]-> COMENTARIO
+UNWIND [
+    {idp: 'post1', consec: 1},
+    {idp: 'post1', consec: 2},
+    {idp: 'post2', consec: 3},
+    {idp: 'post3', consec: 4},
+    {idp: 'post4', consec: 5},
+    {idp: 'post5', consec: 6},
+    {idp: 'post6', consec: 7},
+    {idp: 'post7', consec: 8},
+    {idp: 'post8', consec: 9},
+    {idp: 'post9', consec: 10},
+    {idp: 'post10', consec: 11},
+    {idp: 'post10', consec: 12}
+] AS rel_tiene
+MATCH (px:POST {idp: rel_tiene.idp})
+MATCH (cx:COMENTARIO {consec: rel_tiene.consec})
+CREATE (px)-[:TIENE]->(cx);

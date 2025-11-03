@@ -1,34 +1,34 @@
 services:
-  #Contenedor principal de Neo4j
-  neo4j:
-    image: neo4j:5.13.0
-    container_name: neo4j-db
+  mongodb:
+    image: mongo:8.2
+    container_name: mongodb_container
     ports:
-      - "7474:7474" #Puerto para el acceso HTTP
-      - "7687:7687" #Puerto para el acceso Bolt
+      - "27017:27017"
+    volumes:
+      - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+      - mongo_data:/data/db
     env_file:
       - .env
     environment:
-      - NEO4J_AUTH=${DB_USER}/${DB_PASS}
+      MONGO_INITDB_ROOT_USERNAME: ${DB_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${DB_PASS}
+      MONGO_INITDB_DATABASE: mydatabase
+    
+  #Contenedor para pruebas usando DBGate
+  dbgate:
+    image: dbgate/dbgate
+    restart: always
+    ports:
+      - 80:3000
     volumes:
-      - neo4j_data:/data
-      - neo4j_logs:/logs
-  
-  #Contenedor auxiliar para inicializar la base de datos con un script Cypher
-  init-neo:
-    image: neo4j:5.13.0
-    depends_on:
-      - neo4j
-    env_file:
-      - .env
-    volumes:
-      - ./init.cypher:/scripts/init.cypher:ro
-    #Ejecución del script de inicialización
-    command: >
-      bash -c "until cypher-shell -a bolt://neo4j:7687 -u ${DB_USER} -p ${DB_PASS} 'RETURN 1;' >/dev/null 2>&1; do sleep 1; done;
-               cypher-shell -a bolt://neo4j:7687 -u ${DB_USER} -p ${DB_PASS} -f /scripts/init.cypher || true"
-    restart: "no"
+      - dbgate-data:/root/.dbgate
+    environment:
+      CONNECTIONS: con3
+      LABEL_con3: MongoDB
+      URL_con3: mongodb://${DB_USER}:${DB_PASS}@mongodb:27017/mydatabase?authSource=admin
+      ENGINE_con3: mongo@dbgate-plugin-mongo
 
 volumes:
-  neo4j_data:
-  neo4j_logs:
+  mongo_data:
+  dbgate-data:
+    driver: local

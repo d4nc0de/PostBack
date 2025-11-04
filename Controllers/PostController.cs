@@ -1,16 +1,17 @@
 using HR.Models;
+using HR.Models;
 using HR.Models.Dto;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Neo4jClient;
 using Neo4jClient;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using HR.Models;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using Neo4jClient;
 
 namespace HR.Controllers
 {
@@ -31,7 +32,7 @@ namespace HR.Controllers
             // Trae todos los posts
             var posts = await _client.Cypher
                 .Match("(p:POST)")
-                .Return(p => p.As<Post>())
+                .Return(p => p.As<POST>())
                 .ResultsAsync;
 
             // Por cada post, buscar user y comentarios (simple y claro).
@@ -49,7 +50,7 @@ namespace HR.Controllers
                 var comentarios = await _client.Cypher
                     .Match("(c:COMENTARIO {idp:$idp})")
                     .WithParam("idp", post.idp)
-                    .Return(c => c.As<Comentario>())
+                    .Return(c => c.As<COMENTARIO>())
                     .OrderBy("c.consec ASC")
                     .ResultsAsync;
 
@@ -85,7 +86,7 @@ namespace HR.Controllers
         {
             var Posts = await _client.Cypher
                                             .Match("(c:POST)")
-                                            .Return(c => c.As<Post>())
+                                            .Return(c => c.As<POST>())
                                     .ResultsAsync;
 
             return Ok(Posts);
@@ -99,7 +100,7 @@ namespace HR.Controllers
             var post = (await _client.Cypher
                 .Match("(p:POST {idp:$idp})")
                 .WithParam("idp", idp)
-                .Return(p => p.As<Post>())
+                .Return(p => p.As<POST>())
                 .ResultsAsync)
                 .FirstOrDefault();
 
@@ -118,7 +119,7 @@ namespace HR.Controllers
             var comentarios = await _client.Cypher
                 .Match("(c:COMENTARIO {idp:$idp})")
                 .WithParam("idp", idp)
-                .Return(c => c.As<Comentario>())
+                .Return(c => c.As<COMENTARIO>())
                 .OrderBy("c.consec ASC")
                 .ResultsAsync;
 
@@ -151,67 +152,69 @@ namespace HR.Controllers
         }
 
         //Crear un nuevo usuario
-        [HttpPost]
-        public async Task<IActionResult> Create([FromBody]USUARIO user){
-            var exists = (await _client.Cypher
-                                      .Match("(u:USUARIO)")
-                                      .Where((USUARIO u) => u.idu == user.idu)
-                                      .Return(u => u.As<USUARIO>())
-                                      .ResultsAsync)
-                         .Any();
-            if (exists) return Conflict($"Usuario con idu={user.idu} ya existe.");
-
-        // 🔹 Obtener comentario 
-        //[HttpGet("post/{idp}/COMENTARIO/{consec}")]
-        //public async Task<IActionResult> GetByPostAndConsec(int idp, int consec)
+        //[HttpPost]
+        //public async Task<IActionResult> Create([FromBody] USUARIO user)
         //{
-        //    var comentario = await _client.Cypher
-        //                                  .Match("(c:COMENTARIO)")
-        //                                  .Where((Comentario c) => c.idp == idp && c.consec == consec)
-        //                                  .Return(c => c.As<Comentario>())
-        //                                  .ResultsAsync;
-
-        //    return Ok(comentario.LastOrDefault());
+        //    var exists = (await _client.Cypher
+        //                              .Match("(u:USUARIO)")
+        //                              .Where((USUARIO u) => u.idu == user.idu)
+        //                              .Return(u => u.As<USUARIO>())
+        //                              .ResultsAsync)
+        //                 .Any();
+        //    if (exists) return Conflict($"Usuario con idu={user.idu} ya existe.");
         //}
 
-        // 🔹 Crear comentario
-        [HttpPost]
-        public async Task<IActionResult> Create([FromBody] Post post)
-        {
-            await _client.Cypher
-                         .Create("(c:POST $POST)")
-                         .WithParam("POST", post)
+            // 🔹 Obtener comentario 
+            //[HttpGet("post/{idp}/COMENTARIO/{consec}")]
+            //public async Task<IActionResult> GetByPostAndConsec(int idp, int consec)
+            //{
+            //    var comentario = await _client.Cypher
+            //                                  .Match("(c:COMENTARIO)")
+            //                                  .Where((Comentario c) => c.idp == idp && c.consec == consec)
+            //                                  .Return(c => c.As<Comentario>())
+            //                                  .ResultsAsync;
+
+            //    return Ok(comentario.LastOrDefault());
+            //}
+
+            // 🔹 Crear comentario
+            [HttpPost]
+            public async Task<IActionResult> Create([FromBody] POST post)
+            {
+                await _client.Cypher
+                             .Create("(c:POST $POST)")
+                             .WithParam("POST", post)
+                                .ExecuteWithoutResultsAsync();
+
+                return Ok("Post creado correctamente.");
+            }
+
+            // 🔹 Actualizar comentario 
+            [HttpPut("post/{idp}")]
+            public async Task<IActionResult> Update(int idp, [FromBody] POST post)
+            {
+                await _client.Cypher
+                             .Match("(c:POST)")
+                             .Where((POST c) => c.idp == idp)
+                             .Set("c = POST")
+                             .WithParam("POST", post)
                             .ExecuteWithoutResultsAsync();
 
-            return Ok("Post creado correctamente.");
+                return Ok("Post actualizado correctamente.");
+            }
+
+            // 🔹 Eliminar comentario
+            [HttpDelete("post/{idp}")]
+            public async Task<IActionResult> Delete(int idp)
+            {
+                await _client.Cypher
+                             .Match("(c:POST)")
+                             .Where((POST c) => c.idp == idp)
+                             .Delete("POST")
+                                .ExecuteWithoutResultsAsync();
+
+                return Ok("Post eliminado correctamente.");
+            }
+
         }
-
-        // 🔹 Actualizar comentario 
-        [HttpPut("post/{idp}")]
-        public async Task<IActionResult> Update(int idp, [FromBody] Post post)
-        {
-            await _client.Cypher
-                         .Match("(c:POST)")
-                         .Where((Post c) => c.idp == idp)
-                         .Set("c = POST")
-                         .WithParam("POST", post)
-                        .ExecuteWithoutResultsAsync();
-
-            return Ok("Post actualizado correctamente.");
-        }
-
-        // 🔹 Eliminar comentario
-        [HttpDelete("post/{idp}")]
-        public async Task<IActionResult> Delete(int idp)
-        {
-            await _client.Cypher
-                         .Match("(c:POST)")
-                         .Where((Post c) => c.idp == idp)
-                         .Delete("POST")
-                            .ExecuteWithoutResultsAsync();
-
-            return Ok("Post eliminado correctamente.");
-        }
-        
     }
-}

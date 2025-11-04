@@ -19,12 +19,12 @@ namespace HR.Controllers
         }
 
         // 🔹 Obtener los comentarios
-        [HttpGet("ObtenerPosts")]
+        [HttpGet("ObtenerComments")]
         public async Task<IActionResult> Get()
         {
             var comentarios = await _client.Cypher
                                             .Match("(c:COMENTARIO)")
-                                            .Return(c => c.As<Comentario>())
+                                            .Return(c => c.As<COMENTARIO>())
                                             .ResultsAsync;
 
             return Ok(comentarios);
@@ -36,20 +36,20 @@ namespace HR.Controllers
         {
             var comentarios = await _client.Cypher
                                             .Match("(c:COMENTARIO)")
-                                            .Where((Comentario c) => c.idp == idp)
-                                            .Return(c => c.As<Comentario>())
+                                            .Where((COMENTARIO c) => c.idp == idp)
+                                            .Return(c => c.As<COMENTARIO>())
                                             .ResultsAsync;
 
             return Ok(comentarios);
         }
 
-        [HttpGet("Comentario/{idp}")]
+        [HttpGet("GetComentsAutByPost/{idp}")]
         public async Task<IActionResult> GetComentsAutByPost(int idp)
         {
             var comentarios = await _client.Cypher
                                             .Match("(c:COMENTARIO)")
-                                            .Where((Comentario c) => c.idp == idp && c.iduAutorizador != null)
-                                            .Return(c => c.As<Comentario>())
+                                            .Where((COMENTARIO c) => c.idp == idp && c.iduAutorizador != 0)
+                                            .Return(c => c.As<COMENTARIO>())
                                             .ResultsAsync;
 
             return Ok(comentarios);
@@ -61,8 +61,8 @@ namespace HR.Controllers
         {
             var comentario = await _client.Cypher
                                           .Match("(c:COMENTARIO)")
-                                          .Where((Comentario c) => c.idp == idp && c.consec == consec)
-                                          .Return(c => c.As<Comentario>())
+                                          .Where((COMENTARIO c) => c.idp == idp && c.consec == consec)
+                                          .Return(c => c.As<COMENTARIO>())
                                           .ResultsAsync;
 
             return Ok(comentario.LastOrDefault());
@@ -70,7 +70,7 @@ namespace HR.Controllers
 
         // 🔹 Crear comentario
         [HttpPost("Crear")]
-        public async Task<IActionResult> Create([FromBody] Comentario comentario)
+        public async Task<IActionResult> Create([FromBody] COMENTARIO comentario)
         {
             await _client.Cypher
                          .Create("(c:COMENTARIO $COMENTARIO)")
@@ -82,11 +82,11 @@ namespace HR.Controllers
 
         // 🔹 Actualizar comentario 
         [HttpPut("post/{idp}/COMENTARIO/{consec}")]
-        public async Task<IActionResult> Update(int idp, int consec, [FromBody] Comentario comentario)
+        public async Task<IActionResult> Update(int idp, int consec, [FromBody] COMENTARIO comentario)
         {
             await _client.Cypher
                          .Match("(c:COMENTARIO)")
-                         .Where((Comentario c) => c.idp == idp && c.consec == consec)
+                         .Where((COMENTARIO c) => c.idp == idp && c.consec == consec)
                          .Set("c = COMENTARIO")
                          .WithParam("COMENTARIO", comentario)
                          .ExecuteWithoutResultsAsync();
@@ -100,7 +100,7 @@ namespace HR.Controllers
         {
             await _client.Cypher
                          .Match("(c:COMENTARIO)")
-                         .Where((Comentario c) => c.idp == idp && c.consec == consec)
+                         .Where((COMENTARIO c) => c.idp == idp && c.consec == consec)
                          .Delete("c")
                          .ExecuteWithoutResultsAsync();
 

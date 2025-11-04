@@ -3,3 +3,9 @@
 db/data/
 db/logs/
 /.vs
+/obj/Debug/net5.0/HR.csproj.Up2Date
+/obj/Debug/net5.0/staticwebassets/HR.StaticWebAssets.Pack.cache
+/obj/Debug/net5.0/HR.csproj.BuildWithSkipAnalyzers
+/obj/Debug/net5.0/HR.sourcelink.json
+/obj/Debug/net5.0/refint/HR.dll
+/bin/Debug/net5.0/HR.StaticWebAssets.xml

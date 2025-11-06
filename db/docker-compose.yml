@@ -9,10 +9,11 @@ services:
     env_file:
       - .env
     environment:
-      - NEO4J_AUTH=${DB_USER}/${DB_PASS}
+      - NEO4J_AUTH=${DB_USER_NEO}/${DB_PASS_NEO}
     volumes:
       - neo4j_data:/data
       - neo4j_logs:/logs
+    restart: always
   
   #Contenedor auxiliar para inicializar la base de datos con un script Cypher
   init-neo:
@@ -22,13 +23,50 @@ services:
     env_file:
       - .env
     volumes:
-      - ./init.cypher:/scripts/init.cypher:ro
-    #Ejecución del script de inicialización
+      - ./db_init/neo-init.cypher:/scripts/neo-init.cypher:ro
     command: >
-      bash -c "until cypher-shell -a bolt://neo4j:7687 -u ${DB_USER} -p ${DB_PASS} 'RETURN 1;' >/dev/null 2>&1; do sleep 1; done;
-               cypher-shell -a bolt://neo4j:7687 -u ${DB_USER} -p ${DB_PASS} -f /scripts/init.cypher || true"
+      bash -c "
+        until cypher-shell -a bolt://neo4j:7687 -u ${DB_USER_NEO} -p ${DB_PASS_NEO} 'RETURN 1;' >/dev/null 2>&1; do sleep 1; done;
+        if ! cypher-shell -a bolt://neo4j:7687 -u ${DB_USER_NEO} -p ${DB_PASS_NEO} 'MATCH (n) RETURN n LIMIT 1;' | grep -q 'n'; then
+          echo 'Base vacía, ejecutando script de inicialización...';
+          cypher-shell -a bolt://neo4j:7687 -u ${DB_USER_NEO} -p ${DB_PASS_NEO} -f /scripts/neo-init.cypher;
+        else
+          echo 'Base ya inicializada, no se ejecuta el script.';
+        fi;
+        exit 0"
     restart: "no"
+
+  mongodb:
+    image: mongo:8.0
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./db_init/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+      - mongo_data:/data/db
+    env_file:
+      - .env
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${DB_USER_MONGODB}
+      MONGO_INITDB_ROOT_PASSWORD: ${DB_PASS_MONGODB}
+      MONGO_INITDB_DATABASE: ${DB_NAME_MONGODB}
+    
+  #Contenedor para pruebas usando DBGate
+  dbgate:
+    image: dbgate/dbgate
+    restart: always
+    ports:
+      - 80:3000
+    volumes:
+      - dbgate-data:/root/.dbgate
+    environment:
+      CONNECTIONS: con3
+      LABEL_con3: MongoDB
+      URL_con3: mongodb://${DB_USER_MONGODB}:${DB_PASS_MONGODB}@${DB_HOST_MONGODB}:${DB_PORT_MONGODB}/${DB_NAME_MONGODB}?authSource=${DB_AUTHSOURCE_MONGODB}
+      ENGINE_con3: mongo@dbgate-plugin-mongo
 
 volumes:
   neo4j_data:
   neo4j_logs:
+  mongo_data:
+  dbgate-data:
+    driver: local

@@ -11,7 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
-using Neo4jClient;
+using MongoDB.Driver;
 
 namespace HR
 {
@@ -38,7 +38,7 @@ namespace HR
                         .WithOrigins("http://localhost:4200") // tu front
                         .AllowAnyMethod()
                         .AllowAnyHeader()
-                        // Si vas a usar cookies/autenticaci�n por navegador, descomenta:
+                        // Si vas a usar cookies/autenticación por navegador, descomenta:
                         // .AllowCredentials()
                         ;
                 });
@@ -49,9 +49,20 @@ namespace HR
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "HR", Version = "v1" });
             });
 
-            var client = new BoltGraphClient(new Uri("bolt://localhost:7687"),"neo4j", "password123");
-            client.ConnectAsync();
-            services.AddSingleton<IGraphClient>(client);
+            // Configuración de MongoDB
+            services.AddSingleton<IMongoClient>(sp =>
+            {
+                var connectionString = Configuration.GetConnectionString("MongoDB") 
+                    ?? "mongodb://root:password123@localhost:27017/?authSource=admin";
+                return new MongoClient(connectionString);
+            });
+
+            services.AddScoped<IMongoDatabase>(sp =>
+            {
+                var client = sp.GetRequiredService<IMongoClient>();
+                var databaseName = Configuration["MongoDB:DatabaseName"] ?? "biblioteca";
+                return client.GetDatabase(databaseName);
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

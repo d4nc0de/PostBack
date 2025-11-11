@@ -4,7 +4,7 @@ namespace HR.Models
 {
     public class User
     {
-       public string rut { get; set; }
-       public string name { get; set; }
+       public string RUT { get; set; }
+       public string Name { get; set; }
     }
 }

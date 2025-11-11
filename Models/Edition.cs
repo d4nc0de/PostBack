@@ -5,8 +5,8 @@ namespace HR.Models
     public class Edition
     {
         public string ISBN { get; set; }
-        public DateTime publicationDate { get; set; }
-        public string language { get; set; }
-        public string bookTitle { get; set; }
+        public DateTime PublicationDate { get; set; }
+        public string Language { get; set; }
+        public string BookTitle { get; set; }
     }
 }

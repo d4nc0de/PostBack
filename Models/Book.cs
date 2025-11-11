@@ -4,6 +4,6 @@ namespace HR.Models
 {
     public class Book
     {
-        public string title { get; set; }
+        public string Title { get; set; }
     }
 }

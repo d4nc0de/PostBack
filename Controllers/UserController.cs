@@ -1,144 +1,261 @@
+using HR.Models;
+using HR.Models.Dto;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
 using System.Threading.Tasks;
-using HR.Models;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using Neo4jClient;
 
 namespace HR.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("api/[controller]")]
     public class UserController : ControllerBase
     {
-        private readonly IGraphClient _client;
+        private readonly IMongoCollection<User> _users;
+        private readonly IMongoCollection<Loan> _loans;
+        private readonly ILogger<UserController> _logger;
 
-        public UserController(IGraphClient client)
+        public UserController(IMongoDatabase database, ILogger<UserController> logger)
         {
-            _client = client;
+            _users = database.GetCollection<User>("usuarios");
+            _loans = database.GetCollection<Loan>("prestamos");
+            _logger = logger;
         }
 
-        //Obtener todos los usuarios
+        // GET: api/user
         [HttpGet]
-        public async Task<IActionResult> Get(){
-            var users = await _client.Cypher
-                                    .Match("(u:USUARIO)")
-                                    .Return(u => u.As<USUARIO>())
-                                    .ResultsAsync;
-
-            return Ok(users);
-        }
-
-        //Obtener usuario por id
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(int id){
-            var user = (await _client.Cypher
-                                    .Match("(u:USUARIO)")
-                                    .Where((USUARIO u) => u.idu == id)
-                                    .Return(u => u.As<USUARIO>())
-                                    .ResultsAsync)
-                        .FirstOrDefault();
-
-            if (user == null) return NotFound();
-            return Ok(user);
-        }
-
-
-        [HttpGet("Login")]
-        public async Task<IActionResult> Login(string mail, string password)
+        public async Task<ActionResult<IEnumerable<UserViewDto>>> GetAll()
         {
-            var user = (await _client.Cypher
-                                    .Match("(u:USUARIO)")
-                                    .Where((USUARIO u) => u.mail == mail && u.password == password)
-                                    .Return(u => u.As<USUARIO>())
-                                    .ResultsAsync)
-                        .FirstOrDefault();
+            try
+            {
+                var users = await _users.Find(_ => true).ToListAsync();
 
-            if (user == null) return NotFound();
-            return Ok(user);
+                var dto = users.Select(u => new UserViewDto
+                {
+                    RUT = u.RUT,
+                    Name = u.Name
+                }).ToList();
+
+                return Ok(dto);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error obteniendo usuarios");
+                return StatusCode(500, "Error interno del servidor");
+            }
         }
 
-        [HttpPost("Register")]
-        public async Task<IActionResult> Register([FromBody] USUARIO user)
+        // GET: api/user/{rut}
+        [HttpGet("{rut}")]
+        public async Task<ActionResult<UserViewDto>> GetByRUT(string rut)
         {
-            var exists = (await _client.Cypher
-                                      .Match("(u:USUARIO)")
-                                      .Where((USUARIO u) => u.idu == user.idu)
-                                      .Return(u => u.As<USUARIO>())
-                                      .ResultsAsync)
-                         .Any();
-            if (exists) return Conflict($"Usuario con idu={user.idu} ya existe.");
+            try
+            {
+                var user = await _users.Find(u => u.RUT == rut).FirstOrDefaultAsync();
 
-            await _client.Cypher
-                            .Create("(u:USUARIO $user)")
-                            .WithParam("user", user)
-                            .ExecuteWithoutResultsAsync();
+                if (user == null)
+                    return NotFound($"Usuario con RUT {rut} no encontrado");
 
-            return Ok();
+                var dto = new UserViewDto
+                {
+                    RUT = user.RUT,
+                    Name = user.Name
+                };
+
+                return Ok(dto);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error obteniendo usuario con RUT {RUT}", rut);
+                return StatusCode(500, "Error interno del servidor");
+            }
         }
 
-        //Crear un nuevo usuario
+        // GET: api/user/{rut}/detail (con préstamos)
+        [HttpGet("{rut}/detail")]
+        public async Task<ActionResult<UserDetailDto>> GetDetailByRUT(string rut)
+        {
+            try
+            {
+                var user = await _users.Find(u => u.RUT == rut).FirstOrDefaultAsync();
+
+                if (user == null)
+                    return NotFound($"Usuario con RUT {rut} no encontrado");
+
+                // Obtener préstamos activos
+                var activeLoans = await _loans
+                    .Find(l => l.RUT == user.RUT && l.ReturnDate == null)
+                    .ToListAsync();
+
+                // Obtener historial de préstamos
+                var loanHistory = await _loans
+                    .Find(l => l.RUT == user.RUT && l.ReturnDate != null)
+                    .SortByDescending(l => l.LoanDate)
+                    .Limit(10)
+                    .ToListAsync();
+
+                var dto = new UserDetailDto
+                {
+                    RUT = user.RUT,
+                    Name = user.Name,
+                    ActiveLoans = activeLoans.Select(l => new LoanViewDto
+                    {
+                        RUT = l.RUT,
+                        CopyNumber = l.CopyNumber,
+                        LoanDate = l.LoanDate,
+                        ReturnDate = l.ReturnDate,
+                        IsActive = true
+                    }).ToList(),
+                    LoanHistory = loanHistory.Select(l => new LoanViewDto
+                    {
+                        RUT = l.RUT,
+                        CopyNumber = l.CopyNumber,
+                        LoanDate = l.LoanDate,
+                        ReturnDate = l.ReturnDate,
+                        IsActive = false
+                    }).ToList()
+                };
+
+                return Ok(dto);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error obteniendo detalle del usuario {RUT}", rut);
+                return StatusCode(500, "Error interno del servidor");
+            }
+        }
+
+        // POST: api/user
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody]USUARIO user){
-            var exists = (await _client.Cypher
-                                      .Match("(u:USUARIO)")
-                                      .Where((USUARIO u) => u.idu == user.idu)
-                                      .Return(u => u.As<USUARIO>())
-                                      .ResultsAsync)
-                         .Any();
-            if (exists) return Conflict($"Usuario con idu={user.idu} ya existe.");
+        public async Task<ActionResult<UserViewDto>> Create([FromBody] UserCreateDto dto)
+        {
+            try
+            {
+                if (dto == null)
+                    return BadRequest("Los datos del usuario no pueden ser nulos");
 
-            await _client.Cypher
-                            .Create("(u:USUARIO $user)")
-                            .WithParam("user", user)
-                            .ExecuteWithoutResultsAsync();
+                if (string.IsNullOrWhiteSpace(dto.RUT))
+                    return BadRequest("El RUT es obligatorio");
 
-            return Ok();
+                if (string.IsNullOrWhiteSpace(dto.Name))
+                    return BadRequest("El nombre es obligatorio");
+
+                // Verificar si ya existe un usuario con ese RUT
+                var existingUser = await _users
+                    .Find(u => u.RUT == dto.RUT)
+                    .FirstOrDefaultAsync();
+
+                if (existingUser != null)
+                    return Conflict($"Ya existe un usuario con RUT {dto.RUT}");
+
+                var user = new User
+                {
+                    RUT = dto.RUT,
+                    Name = dto.Name
+                };
+
+                await _users.InsertOneAsync(user);
+
+                var responseDto = new UserViewDto
+                {
+                    RUT = user.RUT,
+                    Name = user.Name
+                };
+
+                return CreatedAtAction(nameof(GetByRUT), new { rut = user.RUT }, responseDto);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creando usuario");
+                return StatusCode(500, "Error interno del servidor");
+            }
         }
 
-        //Actualizar un usuario existente
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody]USUARIO user){
-            var existing = (await _client.Cypher
-                                        .Match("(u:USUARIO)")
-                                        .Where((USUARIO u) => u.idu == id)
-                                        .Return(u => u.As<USUARIO>())
-                                        .ResultsAsync)
-                           .Any();
-            if (!existing) return NotFound();
+        // PUT: api/user/{rut}
+        [HttpPut("{rut}")]
+        public async Task<IActionResult> Update(string rut, [FromBody] UserUpdateDto dto)
+        {
+            try
+            {
+                if (dto == null)
+                    return BadRequest("Los datos del usuario no pueden ser nulos");
 
-            await _client.Cypher
-                        .Match("(u:USUARIO)")
-                        .Where((USUARIO u) => u.idu == id)
-                        .Set("u = $user")
-                        .WithParam("user", user)
-                        .ExecuteWithoutResultsAsync();
+                if (string.IsNullOrWhiteSpace(dto.Name))
+                    return BadRequest("El nombre es obligatorio");
 
-            return Ok();
+                var filter = Builders<User>.Filter.Eq(u => u.RUT, rut);
+                var update = Builders<User>.Update.Set(u => u.Name, dto.Name);
+
+                var result = await _users.UpdateOneAsync(filter, update);
+
+                if (result.MatchedCount == 0)
+                    return NotFound($"Usuario con RUT {rut} no encontrado");
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error actualizando usuario {RUT}", rut);
+                return StatusCode(500, "Error interno del servidor");
+            }
         }
 
-        //Eliminar un usuario
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id){
-            var existing = (await _client.Cypher
-                                        .Match("(u:USUARIO)")
-                                        .Where((USUARIO u) => u.idu == id)
-                                        .Return(u => u.As<USUARIO>())
-                                        .ResultsAsync)
-                           .Any();
-            if (!existing) return NotFound();
+        // DELETE: api/user/{rut}
+        [HttpDelete("{rut}")]
+        public async Task<IActionResult> Delete(string rut)
+        {
+            try
+            {
+                // Verificar si tiene préstamos activos
+                var activeLoans = await _loans
+                    .CountDocumentsAsync(l => l.RUT == rut && l.ReturnDate == null);
 
-            await  _client.Cypher
-                            .Match("(u:USUARIO)")
-                            .Where((USUARIO u) => u.idu == id)
-                            .Delete("u")
-                            .ExecuteWithoutResultsAsync();
+                if (activeLoans > 0)
+                    return BadRequest("No se puede eliminar un usuario con préstamos activos");
 
-            return Ok();
+                var filter = Builders<User>.Filter.Eq(u => u.RUT, rut);
+                var result = await _users.DeleteOneAsync(filter);
+
+                if (result.DeletedCount == 0)
+                    return NotFound($"Usuario con RUT {rut} no encontrado");
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error eliminando usuario {RUT}", rut);
+                return StatusCode(500, "Error interno del servidor");
+            }
         }
-        
+
+        // GET: api/user/search?name={name}
+        [HttpGet("search")]
+        public async Task<ActionResult<IEnumerable<UserViewDto>>> Search([FromQuery] string name)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(name))
+                    return BadRequest("El parámetro de búsqueda no puede estar vacío");
+
+                var filter = Builders<User>.Filter.Regex(u => u.Name, new MongoDB.Bson.BsonRegularExpression(name, "i"));
+                var users = await _users.Find(filter).ToListAsync();
+
+                var dto = users.Select(u => new UserViewDto
+                {
+                    RUT = u.RUT,
+                    Name = u.Name
+                }).ToList();
+
+                return Ok(dto);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error buscando usuarios con nombre '{Name}'", name);
+                return StatusCode(500, "Error interno del servidor");
+            }
+        }
     }
 }
